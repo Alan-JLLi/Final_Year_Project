@@ -1,0 +1,52 @@
+install.packages('uroot') 
+install.packages('tseries')
+install.packages('fUnitRoots') 
+install.packages('forecast')
+install.packages('fUnitRoots') 
+library(TSA)
+library(readxl)
+library(forecast)
+library(uroot) 
+library(tseries) 
+library(fUnitRoots)
+library(forecast)
+#读取数据
+apple <- read_excel("C:/Users/asus/Desktop/apple.xls")
+plot(apple,xlab='Date',ylab='adj_Close_price',type='o')
+
+#lm-test
+lm_test = lm(apple$adjClose~apple$Date)
+plot(lm_test)
+summary(lm_test)
+
+#The graph after the second order difference is detrended
+close_price<-ts(apple$adjClose)
+plot(close_price,type = 'o',xlab='num_data',ylab='adj_Close_price')
+plot(diff(log(close_price),differences=2),type = 'o',xlab = 'date',ylab = 'price_log_diff2')
+
+#adf, acf, pacf test
+adf.test(diff(log(close_price), differences=2))
+acf(diff(log(close_price), differences=2))
+pacf(diff(log(close_price), differences=2))
+
+#bic aic test
+bic_test=armasubsets(y=diff(log(close_price), differences=2),nar=10,nma=10,y.name='BIC_test',ar.method='ols');plot(bic_test)
+aic_test1=arima(log(close_price), order=c(4,2,5),method="ML",fixed=c(NA,NA,NA,NA,NA,0,0,0,NA));aic_test1
+aic_test1=arima(log(close_price), order=c(4,2,5),method="CSS",fixed=c(NA,NA,NA,NA,NA,0,0,0,NA));aic_test1
+
+#checkout
+qqnorm(diff(log(close_price), differences=2));qqline(diff(log(close_price), differences=2))#residual,p-value
+plot(rstandard(aic_test1),xlab='num_data',ylab='standardized residuals',type='o');abline(h=0)
+tsdiag(aic_test1,gof=10,omit.initial=F)
+res=residuals(aic_test1)
+Box.test(res,type='Ljung',lag=9)
+
+#predict
+test_predict=predict(aic_test1,n.ahead=10);test_predict
+forecast_test1=forecast(aic_test1,h=10,level=c(95))
+predict(aic_test1,n.ahead=20,level=c(95))
+
+summary(auto.arima(close_price))
+forecast_test2=forecast(fit,h=10)
+autoplot(forecast_test1,10,100000)
+test1=auto.arima(log(close_price))
